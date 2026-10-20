@@ -100,6 +100,8 @@ QQ 消息 ──► SnowLuma（OneBot v11 WS）──► 本桥接进程 ──�
   - `closed-agent`：仅私聊 owner（config.json 的 ownerQQ，可在控制台设置）→ 完整工具（默认用 DSH 自己声明的默认 preset，即 `standard`；可在控制台「closed-agent preset」下拉改为任意 DSH preset），可在 QQ 上操控 DSH
   - `reserved`（一代仿真）：仿真群友，观望/活跃/试探/退场状态机，选择性参与、按空格分句发送、主动收尾
   - `reserved2`（二代仿真，运行 `setup-dsh.mjs` 后 DSH 默认）：文本不自动转发，AI 通过 `qq_get_unread_messages` / `qq_send_message` 等工具自主看消息、发言、等待、设置唤醒/潜水；DSH 端使用 `qq-chat-v2` preset
+- **本地日记**：二代仿真可以用 `qq_diary_append` 写自己的小日记，用 `qq_diary_recent` 翻看最近条目。日记与群聊记忆分开，默认每天最多 3 条，同时保存为 `state/diary/diary.jsonl` 和按日期分开的 Markdown；`state/` 已被 Git 忽略，不会上传到 GitHub
+- **自然主动节奏**：默认在群安静 15 分钟后进入主动判断，每隔 45~110 分钟检查一次，每次 35% 概率开口；仍受白名单、暂停状态和发送限频约束
 - **交互增强**：
   - agent 通过 `ask_user_question` 提问时，问题会转发到 QQ，回复即自动应答
   - agent 请求工具审批时，转发到 QQ，回复「通过」/「拒绝」即可决策
@@ -144,6 +146,8 @@ npm install        # 安装依赖（postinstall 会自动修补 @snowluma/sdk �
 | `socialV2.agentPreset` | `reserved2` 模式使用的 DSH agent preset，默认 `qq-chat-v2` |
 | `socialV2.initialPromptMaxChars` | 会话「初始提示词」（控制台为某个群/私聊预写的环境说明）的字数上限，默认 2000，允许 100~8000。越界值会在启动时收敛并保持原文件不动 |
 | `socialV2.media` | 图片/表情的上限：`maxBytes`（单条消息总字节，默认 8MB）、`maxPixels`（单张像素，默认 64MP）、`maxCount`（单条最多处理几张，默认 5）。越界值启动时收敛 |
+| `socialV2.diary` | 本地日记：`enabled` 总开关，`maxEntriesPerDay` 每日上限（默认 3），`maxContentChars` 单条正文上限（默认 1000），`recentLimit` 单次最多返回几条（默认 5） |
+| `socialV2.proactive` | 二代主动冒泡节奏：默认安静 15 分钟后，以 45~110 分钟随机间隔、35% 概率尝试开口 |
 | `webSearch.provider` | 联网搜索后端：`auto`（默认，优先 DeepSeek、失败回退 Bing）/ `deepseek`（仅 DeepSeek，无凭据时报错）/ `bing` |
 | `webSearch.apiKeyEnv` / `apiKey` | 搜索凭据的环境变量名（默认 `DEEPSEEK_API_KEY`）/ 直接写死 key（不推荐）。都不设置时读 DSH 的 `$DSH_HOME/.credentials.yaml` 里同名 ref |
 | `webSearch.baseURL` / `model` / `maxUses` / `maxResults` | 搜索端点（默认 `https://api.deepseek.com/anthropic/v1`，必须 https 且解析到公网）、模型（默认 `deepseek-v4-flash`）、单次搜索最多用几次工具、返回条数上限 |
@@ -293,6 +297,7 @@ qq-bridge/
   plugins/qq-mode-console  # DSH 插件：注册 qq-mode 设置命名空间（仅 host 半，UI 卡片未实现）
   src/
     bridge.js           # 主程序
+    diary-store.js      # 追加式本地日记存储（JSONL + 每日 Markdown）
     dsh-client.js       # Node 版 DSH API 客户端（WS 下行）
     md-to-plain.js      # Markdown → QQ 纯文本
     self-test.js        # DSH 侧自测
@@ -300,6 +305,8 @@ qq-bridge/
     patch-snowluma-sdk.mjs  # 修补 SDK 的 ESM 打包 bug（postinstall 自动执行）
   state/                # 运行时数据（不入库）
 ```
+
+日记与主动行为的产品灵感参考了 [AI Companion Kit](https://github.com/pinganbbOvO/ai-companion-kit)（MIT）；本项目按现有权限模型和本地存储结构独立实现，没有引入其手机控制、听歌或语音识别依赖。
 
 > 🎤 **独立的「发语音」工具不在这里**：它是仓库上一级的 [`../voice-tool/`](../voice-tool/)（`voice-cli.mjs` /
 > `voice-gui.mjs` / `public/voice.html` / `发语音.cmd`）。图形界面双击上一级的「发语音-图形界面.cmd」。
@@ -386,3 +393,4 @@ SnowLuma 同一个账号的 **HTTP token（默认 3000 端口）与 WebSocket to
 ## 合规提醒
 
 SnowLuma 是独立第三方项目，与腾讯/QQ 无隶属关系，仅供学习与技术研究；使用前请阅读其 EULA 与《QQ 用户协议》。
+

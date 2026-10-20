@@ -87,10 +87,10 @@
     "idleWindowMs": 360000,
     "idleRetryProbability": 0.4,
     "proactiveEnabled": true,
-    "proactiveIdleThresholdMs": 1800000,
+    "proactiveIdleThresholdMs": 900000,
     "proactiveCheckMinMs": 2700000,
-    "proactiveCheckMaxMs": 5400000,
-    "proactiveProbability": 0.2,
+    "proactiveCheckMaxMs": 6600000,
+    "proactiveProbability": 0.35,
     "activeReplyDelayMinMs": 1000,
     "activeReplyDelayMaxMs": 5000,
     "activeDurationEnabled": true,
@@ -129,6 +129,7 @@
       "setWakeConfig": true,
       "markRead": true,
       "memory": true,
+      "diary": true,
       "slangQuery": true,
       "slangSubmit": true,
       "getImages": true,
@@ -233,10 +234,16 @@
     },
     "proactive": {
       "enabled": true,
-      "checkIntervalMinMs": 1800000,
-      "checkIntervalMaxMs": 5400000,
+      "checkIntervalMinMs": 2700000,
+      "checkIntervalMaxMs": 6600000,
       "idleThresholdMs": 900000,
-      "probability": 0.3
+      "probability": 0.35
+    },
+    "diary": {
+      "enabled": true,
+      "maxEntriesPerDay": 3,
+      "maxContentChars": 1000,
+      "recentLimit": 5
     },
     "feedback": {
       "maxLength": 500,
@@ -270,3 +277,4 @@
     "timeoutMs": 35000
   }
 }
+

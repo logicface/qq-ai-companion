@@ -89,6 +89,7 @@ test('autonomy limits and the observation escape hatch stay described', () => {
     '不要用 [SILENT]',
     // 记忆面
     '【记忆卫生】', 'qq_memory_append', 'qq_memory_query', 'qq_memory_remove', 'qq_memory_clear',
+    '【日记习惯】', 'qq_diary_append', 'qq_diary_recent', '每天最多 3 条',
     // 黑话面
     'qq_slang_query', 'qq_slang_submit', '不重复提交',
     // 频率上限
@@ -101,3 +102,4 @@ test('autonomy limits and the observation escape hatch stay described', () => {
 });
 
 console.log(`reserved2 persona prefix: ${prefix.length} characters (not a model-token estimate)`);
+

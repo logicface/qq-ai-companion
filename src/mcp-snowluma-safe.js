@@ -329,6 +329,8 @@ const TOOL_CONFIG_FLAGS = {
   qq_memory_query: 'memory',
   qq_memory_remove: 'memory',
   qq_memory_clear: 'memory',
+  qq_diary_append: 'diary',
+  qq_diary_recent: 'diary',
   qq_slang_query: 'slangQuery',
   qq_slang_submit: 'slangSubmit',
   qq_send_voice: 'sendVoice',
@@ -873,6 +875,51 @@ server.tool(
 );
 
 server.tool(
+  'qq_diary_append',
+  '写一条属于你自己的私人日记，保存在本机。只写值得记住的具体小事和当时心情，不要把聊天逐条抄进去，也不要写成工作汇报；每天最多 3 条。',
+  {
+    key: z.string().describe('会话 key，格式 group:群号 或 private:QQ号'),
+    token: z.string().describe('会话令牌（见唤醒提示中的【会话令牌】）'),
+    content: z.string().min(1).max(1000).describe('第一人称日记正文，具体、简短、口语化'),
+    title: z.string().max(60).optional().describe('可选短标题'),
+    mood: z.string().max(24).optional().describe('可选心情，如开心/无语/惦记'),
+    tags: z.array(z.string().max(24)).max(8).optional().describe('可选标签，最多 8 个')
+  },
+  async ({ key, token, content, title, mood, tags }) => {
+    try {
+      const data = await agentApi('/api/socialV2/diary/append', {
+        method: 'POST',
+        body: JSON.stringify({ key, content, title: title || '', mood: mood || '', tags: tags || [] }),
+        headers: { 'x-agent-token': token }
+      });
+      return { content: [{ type: 'text', text: serializeModelData(data) }] };
+    } catch (error) {
+      return { content: [{ type: 'text', text: `日记写入失败：${error?.message ?? error}` }], isError: true };
+    }
+  }
+);
+
+server.tool(
+  'qq_diary_recent',
+  '翻看你自己最近写的几条日记（只读）。日记是你的生活记录，不是必须在聊天里主动复述的资料。',
+  {
+    key: z.string().describe('会话 key，格式 group:群号 或 private:QQ号'),
+    token: z.string().describe('会话令牌（见唤醒提示中的【会话令牌】）'),
+    limit: z.number().int().min(1).max(20).optional().describe('查看条数，默认使用管理员配置，最多 20')
+  },
+  async ({ key, token, limit }) => {
+    try {
+      const query = new URLSearchParams({ key });
+      if (limit) query.set('limit', String(limit));
+      const data = await agentApi(`/api/socialV2/diary/recent?${query.toString()}`, { headers: { 'x-agent-token': token } });
+      return { content: [{ type: 'text', text: serializeModelData(data) }] };
+    } catch (error) {
+      return { content: [{ type: 'text', text: `日记读取失败：${error?.message ?? error}` }], isError: true };
+    }
+  }
+);
+
+server.tool(
   'qq_memory_append',
   '记录一条轻量记忆：activeTopic=进行中的话题；pendingThought=你想说但还没说的话；memberImpression=对某位群友的印象。记忆会持久化，并在后续唤醒/qq_get_prompt 中自动出现。',
   {
@@ -1375,3 +1422,4 @@ if (cfg.socialV2?.tools?.getForwardMsg !== false) {
 }
 
 await server.connect(new StdioServerTransport());
+

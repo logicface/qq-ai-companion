@@ -23,6 +23,7 @@ import * as stateAcl from '../src/state-acl.mjs';
 import * as sponsorship from '../src/sponsorship.js';
 import * as botReference from '../src/bot-reference.js';
 import * as accessPolicy from '../src/access-policy.js';
+import * as diaryStore from '../src/diary-store.js';
 import { unwrap, createTurnCollector } from '../src/dsh-client.js';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
@@ -165,6 +166,7 @@ export async function bridgeHarness({ config = {}, savedState, files = {}, globa
     ...markdown, ...sensitive, ...wait, ...safeFetch, ...forward, ...slang, ...sticker,
     ...modelPrices, ...tokenLedger, ...voiceLib, ...stateAcl, ...presetPrompt,
     ...sponsorship, ...botReference, ...accessPolicy,
+    ...diaryStore,
     // ACL 收紧会 spawn icacls 去改**真实**文件系统；测试不该做这件事（同理见下面的
     // cleanupTemp / processAudioVolume 桩）。桩成成功，让 hardenStateDirAcl 走正常分支。
     hardenDir: () => ({ ok: true, detail: 'stub' }),
@@ -200,3 +202,4 @@ export async function bridgeHarness({ config = {}, savedState, files = {}, globa
     fs.rmSync(temp, { recursive: true, force: true });
   } };
 }
+
