@@ -101,6 +101,8 @@ test('真实人格卡可用，且筛选不丢公共内容', () => {
   // 人设部分两种模式都必须保留
   for (const text of [v1, v2]) {
     assert.match(text, /小鲸鱼/);
+    assert.match(text, /不锈钢盆/);
+    assert.match(text, /捡的/);
     assert.match(text, /AI 味|去 AI 味/);
   }
   // 二代注入的文本里不应再出现一代的分条机制
