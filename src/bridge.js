@@ -35,6 +35,7 @@ import { extractForwardIds, forwardIdFromData, sanitizeForwardId, formatForwardR
 import { resolvePriceTable } from './model-prices.js';
 import { createTokenLedger } from './token-ledger.js';
 import { createDiaryStore } from './diary-store.js';
+import { classifyBalanceCommand, formatDeepSeekBalance, getDeepSeekBalance } from './deepseek-balance.js';
 import {
   loadSlang,
   saveSlang,
@@ -2558,6 +2559,27 @@ async function main() {
     if (!plainContent && !quoteTargetIsSelf) return;
     const isOwner = String(event.user_id) === String(cfg.ownerQQ ?? '');
     const roleState = readRoleState();
+
+    // DeepSeek 官方余额接口：仅允许管理员私聊查询，避免账户金额出现在群聊。
+    const balanceCommand = classifyBalanceCommand(plainContent, { isOwner, kind });
+    if (balanceCommand === 'denied') {
+      await sendToQQ(key, '余额仅管理员可查询。');
+      return;
+    }
+    if (balanceCommand === 'private-only') {
+      await sendToQQ(key, '余额属于账户信息，请私聊我发送“查询余额”。');
+      return;
+    }
+    if (balanceCommand === 'allowed') {
+      try {
+        const balance = await getDeepSeekBalance();
+        await sendToQQ(key, formatDeepSeekBalance(balance));
+      } catch (error) {
+        log(`DeepSeek 余额查询失败：${error?.message ?? error}`);
+        await sendToQQ(key, 'DeepSeek 余额查询失败，请检查 API Key 或网络后再试。');
+      }
+      return;
+    }
 
     // 若该会话有挂起的提问/审批，先当作回答处理（用当前消息自己的文字，不含引用原文）。
     // 审批只有管理员消息会被消费；群友消息不能因为“审批挂起”而被吞掉，应继续走正常处理。
